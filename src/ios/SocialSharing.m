@@ -725,9 +725,11 @@ static NSString *const kShareOptionUrl = @"url";
     NSRange rangeData = [fileName rangeOfString:@"data:"];
     if ([fileName hasPrefix:@"http"]) {
       NSURL *url = [NSURL URLWithString:fileName];
-      NSData *fileData = [NSData dataWithContentsOfURL:url];
-      NSString *name = (NSString*)[[fileName componentsSeparatedByString: @"/"] lastObject];
-      file = [NSURL fileURLWithPath:[self storeInFile:[name componentsSeparatedByString: @"?"][0] fileData:fileData]];
+      NSURLRequest *request = [NSURLRequest requestWithURL: url];
+      NSHTTPURLResponse *response;
+      NSData *fileData = [NSURLConnection sendSynchronousRequest: request returningResponse: &response error: nil];
+      NSString *name = [response suggestedFilename];
+      file = [NSURL fileURLWithPath:[self storeInFile:name fileData:fileData]];
     } else if ([fileName hasPrefix:@"www/"]) {
       NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
       NSString *fullPath = [NSString stringWithFormat:@"%@/%@", bundlePath, fileName];
