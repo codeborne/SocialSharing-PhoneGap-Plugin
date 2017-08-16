@@ -13,7 +13,6 @@ import android.text.Html;
 import android.util.Base64;
 import android.view.Gravity;
 import android.widget.Toast;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
@@ -25,16 +24,9 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import nl.xservices.plugins.FileProvider;
 
 public class SocialSharing extends CordovaPlugin {
 
@@ -385,13 +377,7 @@ public class SocialSharing extends CordovaPlugin {
   private Uri getFileUriAndSetType(Intent sendIntent, String dir, String image, String subject, int nthFile) throws IOException {
     // we're assuming an image, but this can be any filetype you like
     String localImage = image;
-    if (image.endsWith("mp4") || image.endsWith("mov") || image.endsWith("3gp")){
-      sendIntent.setType("video/*");
-    } else if (image.endsWith("mp3")) {
-      sendIntent.setType("audio/x-mpeg");
-    } else {
-      sendIntent.setType("image/*");
-    }
+    sendIntent.setType(getMIMEType(image));
 
     if (image.startsWith("http") || image.startsWith("www/")) {
       String filename = getFileName(image);
@@ -416,6 +402,7 @@ public class SocialSharing extends CordovaPlugin {
       } else {
         saveFile(getBytes(webView.getContext().getAssets().open(image)), dir, filename);
       }
+      sendIntent.setType(getMIMEType(filename));
     } else if (image.startsWith("data:")) {
       // safeguard for https://code.google.com/p/android/issues/detail?id=7901#c43
       if (!image.contains(";base64,")) {
@@ -455,12 +442,8 @@ public class SocialSharing extends CordovaPlugin {
       localImage = "file://" + dir + "/" + sanitizeFilename(fileName);
     } else if (!image.startsWith("file://")) {
       throw new IllegalArgumentException("URL_NOT_SUPPORTED");
-    } else {
-      //get file MIME type
-      String type = getMIMEType(image);
-      //set intent data and Type
-      sendIntent.setType(type);
     }
+
     return Uri.parse(localImage);
   }
 
@@ -795,3 +778,4 @@ public class SocialSharing extends CordovaPlugin {
     return name.replaceAll("[:\\\\/*?|<> ]", "_");
   }
 }
+
