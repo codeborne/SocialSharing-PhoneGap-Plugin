@@ -12,6 +12,8 @@ import android.os.Environment;
 import android.text.Html;
 import android.util.Base64;
 import android.view.Gravity;
+import android.view.View;
+import android.webkit.WebView;
 import android.widget.Toast;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -22,8 +24,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -384,7 +386,8 @@ public class SocialSharing extends CordovaPlugin {
       localImage = "file://" + dir + "/" + filename;
       if (image.startsWith("http")) {
         // filename optimisation taken from https://github.com/EddyVerbruggen/SocialSharing-PhoneGap-Plugin/pull/56
-        URLConnection connection = new URL(image).openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL(image).openConnection();
+        setUserAgentIfPossible(connection);
         String disposition = connection.getHeaderField("Content-Disposition");
         if (disposition != null) {
           final Pattern dispositionPattern = Pattern.compile("filename=([^;]+)");
@@ -445,6 +448,28 @@ public class SocialSharing extends CordovaPlugin {
     }
 
     return Uri.parse(localImage);
+  }
+
+  private void setUserAgentIfPossible(final HttpURLConnection connection) {
+    final View realWebView = webView.getEngine().getView();
+    if (realWebView instanceof WebView) {
+      synchronized (connection) {
+        cordova.getActivity().runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            connection.setRequestProperty("User-Agent", ((WebView) realWebView).getSettings().getUserAgentString());
+            synchronized (connection) {
+              connection.notify();
+            }
+          }
+        });
+        try {
+          connection.wait(5000);
+        }
+        catch (InterruptedException ignore) {
+        }
+      }
+    }
   }
 
   private String getMIMEType(String fileName) {
