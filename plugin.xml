@@ -4,7 +4,7 @@
         id="cordova-plugin-x-socialsharing"
         version="5.2.0">
 
-  <name>SocialSharing</name>
+  <name>cordova-plugin-x-socialsharing</name>
 
   <description>
     Share text, images (and other files), or a link via the native sharing widget of your device.
